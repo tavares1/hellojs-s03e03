@@ -1,2 +1,2 @@
 # hellojs-s03e03
-Terceiro comit do curso de Javascript
+Terceiro repositorio do curso de Javascript HelloJS
