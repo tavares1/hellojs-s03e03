@@ -1,0 +1,1 @@
+select count(idcontato) from participantesevento where participantesevento.idevento = #{id_do_evento}
