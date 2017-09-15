@@ -5,52 +5,41 @@ const api = axios.create({
   baseURL: "https://api.github.com/"
 })
 
-api.get("repos/seita-ifce/hello-js-v3/issues/1/comments").then(ret => {
+let buscaAlunos = (issue,dataLimite,ep) => {
 
-  users = ret.data.filter(e => e.user.login != "sombriks" && e.body.includes("hellojs-s03"))
+  api.get(`repos/seita-ifce/hello-js-v3/issues/${issue}/comments`).then(ret => {
+        
+    users = ret.data.filter(e => e.user.login != "sombriks" && e.body.includes("hellojs-s03") && +new Date(e.created_at) < +new Date(dataLimite))
+    
+    for (user of users) {
+      let repositorio = (user.body.slice(user.body.trim().indexOf(`hellojs-s03${ep}`)))
+      let episodio = repositorio.slice(repositorio.lastIndexOf('e')).trim().replace(".git", "")
+      let inserir = "insert into presenca(usuario,episodio,datapresenca,repositorio) values (:nome,:episodio,:datapresenca,:repositorio)"
+      let info = {
+        nome: user.user.login,
+        episodio: episodio,
+        datapresenca: new Date(user.created_at),
+        repositorio: repositorio
+      }
+      
+      knex.raw(`select usuario from presenca where usuario='${info.nome}' and episodio='${info.episodio}'`).then((ret) => {
+        if (ret.length == 0) {
+          knex.raw(inserir, info).then(() => {
+            console.log("inserido com sucesso!")
+          }).catch((err) => {
+            console.log(err)
+          })
+        }
+        else {
+          console.log(`${info.nome} já está no banco!`)
+        }
+      }).catch((err) => {
 
-  for (user of users) {
-    let repositorio = (user.body.slice(user.body.trim().indexOf("hellojs-s03e01")))
-    let episodio = repositorio.slice(repositorio.lastIndexOf('e')).trim().replace(".git", "")
-    let inserir = "insert into presenca(usuario,episodio,datapresenca,repositorio) values (:nome,:episodio,:datapresenca,:repositorio)"
-    let nome = {
-      nome: user.user.login,
-      episodio: episodio,
-      datapresenca: new Date(user.created_at),
-      repositorio: repositorio
+      })
     }
+  }).catch((err) => console.log(err))
+}
 
-    knex.raw(inserir, nome).then(() => {
-      console.log("inserido com sucesso!")
-    }).catch((err) => {
-      console.log(err)
-    })
-  }
-}).catch((err) => console.log(err))
-
-api.get("repos/seita-ifce/hello-js-v3/issues/2/comments").then(ret => {
-
-  users = ret.data.filter(e => e.user.login != "sombriks" && new Date(e.created_at) < new Date("2017-09-15") && e.body.includes("hellojs-s03"))
-
-  for (user of users) {
-    let repositorio = (user.body.slice(user.body.trim().indexOf("hellojs-s03e02")))
-    let episodio = repositorio.slice(repositorio.lastIndexOf('e')).trim().replace(".git", "")
-    let inserir = "insert into presenca(usuario,episodio,datapresenca,repositorio) values (:nome,:episodio,:datapresenca,:repositorio)"
-    let nome = {
-      nome: user.user.login,
-      episodio: episodio,
-      datapresenca: new Date(user.created_at),
-      repositorio: repositorio
-    }
-
-
-    knex.raw(inserir, nome).then(() => {
-      console.log("inserido com sucesso!")
-    }).catch((err) => {
-      console.log(err)
-    })
-  }
-}).catch((err) => console.log(err))
-
-
-
+buscaAlunos(1,"2017-09-11","e01")
+buscaAlunos(2,"2017-09-15","e02")
+buscaAlunos(3,"2017-09-19","e03")
